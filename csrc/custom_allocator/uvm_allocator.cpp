@@ -1,7 +1,6 @@
 // Adapted from
 // https://github.com/vllm-project/vllm/blob/main/csrc/cumem_allocator.cpp A
-// CUDAPluggableAllocator based on cumem* APIs. Important: allocation size,
-// CUdeviceptr and CUmemGenericAllocationHandle* need to be unsigned long long
+// CUDAPluggableAllocator based on UVM APIs.
 #include <array>
 #include <cstddef>
 #include <iostream>
@@ -78,6 +77,12 @@ void *uvm_alloc(ssize_t size, int device, CUstream stream) {
     if (error_code != 0) {
       return nullptr;
     }
+    // CUDA_CHECK(
+    //     cuMemAdvise(d_mem, size, CU_MEM_ADVISE_SET_PREFERRED_LOCATION, 0));
+    // if (error_code != 0) {
+    //   CUDA_CHECK(cuMemFree(d_mem));
+    //   return nullptr;
+    // }
 
     return reinterpret_cast<void *>(d_mem);
   }
