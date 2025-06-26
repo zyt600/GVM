@@ -180,7 +180,7 @@ cudaError_t cudaMallocAsync(void **devPtr, size_t size, cudaStream_t stream) {
   static bool first_call = true;
   if (first_call) {
     first_call = false;
-    std::cout << "[INTERCEPTOR] called " << #func_name << "." << std::endl;
+    std::cout << "[INTERCEPTOR] called cudaMallocAsync." << std::endl;
   }
 
   cudaError_t ret =
@@ -202,7 +202,7 @@ cudaError_t cudaFree(void *devPtr) {
   static bool first_call = true;
   if (first_call) {
     first_call = false;
-    std::cout << "[INTERCEPTOR] called " << #func_name << "." << std::endl;
+    std::cout << "[INTERCEPTOR] called cudaFree." << std::endl;
   }
 
   auto it = g_cuda_mem_map.find(devPtr);
@@ -219,7 +219,7 @@ cudaError_t cudaMemGetInfo(size_t *free, size_t *total) {
   static bool first_call = true;
   if (first_call) {
     first_call = false;
-    std::cout << "[INTERCEPTOR] called " << #func_name << "." << std::endl;
+    std::cout << "[INTERCEPTOR] called cudaMemGetInfo." << std::endl;
   }
 
   cudaError_t ret = CUDA_ENTRY_CALL(MemGetInfo, free, total);
