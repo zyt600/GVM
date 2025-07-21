@@ -2,6 +2,7 @@
 
 # Compiler and flags
 CXX = g++
+NVCC = nvcc
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -fPIC
 DEBUG_CXXFLAGS = -std=c++17 -Wall -Wextra -g -DDEBUG -fPIC
 
@@ -71,13 +72,13 @@ test: $(TEST_EXECUTABLES)
 
 # Individual test executables
 $(TEST_BUILD_DIR)/test: $(BUILD_DIR)/test/test.o $(BUILD_DIR)/$(SHARED_LIB) | $(TEST_BUILD_DIR)
-	$(CXX) -o $@ $< -L$(BUILD_DIR) -lgvmdrv
+	$(NVCC) -o $@ $< -L$(BUILD_DIR) -lgvmdrv -lcudart
 
 $(TEST_BUILD_DIR)/test_basic: $(BUILD_DIR)/test/test_basic.o $(BUILD_DIR)/$(SHARED_LIB) | $(TEST_BUILD_DIR)
-	$(CXX) -o $@ $< -L$(BUILD_DIR) -lgvmdrv
+	$(NVCC) -o $@ $< -L$(BUILD_DIR) -lgvmdrv -lcudart
 
 $(TEST_BUILD_DIR)/test_advanced: $(BUILD_DIR)/test/test_advanced.o $(BUILD_DIR)/$(SHARED_LIB) | $(TEST_BUILD_DIR)
-	$(CXX) -o $@ $< -L$(BUILD_DIR) -lgvmdrv
+	$(NVCC) -o $@ $< -L$(BUILD_DIR) -lgvmdrv -lcudart
 
 # Test object files
 $(BUILD_DIR)/test/%.o: test/%.cpp $(HEADERS) | $(BUILD_DIR)

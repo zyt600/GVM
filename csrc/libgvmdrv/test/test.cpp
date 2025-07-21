@@ -1,38 +1,51 @@
 #include "gvmdrv.h"
 #include "gvmdrv_log.h"
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
+
+#include <cuda_runtime.h>
 
 int main() {
-    std::cout << "Testing libgvmdrv library..." << std::endl;
+  std::cout << "Testing libgvmdrv library..." << std::endl;
 
-    // Test finding initialized UVM
-    int fd = find_initialized_uvm();
-    if (fd >= 0) {
-        std::cout << "Found initialized UVM with fd: " << fd << std::endl;
+  void *ptr;
+  cudaMallocManaged(&ptr, 2048ul * 1024 * 1024);
+  cudaFree(ptr);
+  std::cout << "cudaMallocManaged and cudaFree completed" << std::endl;
 
-        // Test getting current timeslice
-        long long unsigned current_timeslice = get_timeslice(fd);
-        std::cout << "Current timeslice: " << current_timeslice << " us" << std::endl;
+  // Test finding initialized UVM
+  int fd = gvm_find_initialized_uvm();
+  if (fd >= 0) {
+    std::cout << "Found initialized UVM with fd: " << fd << std::endl;
 
-        // Test setting a new timeslice (double the current one)
-        long long unsigned new_timeslice = current_timeslice * 2;
-        std::cout << "Setting timeslice to: " << new_timeslice << " us" << std::endl;
-        set_timeslice(fd, new_timeslice);
+    // Test getting current timeslice
+    long long unsigned current_timeslice = gvm_get_timeslice(fd);
+    std::cout << "Current timeslice: " << current_timeslice << " us"
+              << std::endl;
 
-        // Verify the change
-        long long unsigned verify_timeslice = get_timeslice(fd);
-        std::cout << "Verified timeslice: " << verify_timeslice << " us" << std::endl;
+    // Test setting a new timeslice (double the current one)
+    long long unsigned new_timeslice = current_timeslice * 2;
+    std::cout << "Setting timeslice to: " << new_timeslice << " us"
+              << std::endl;
+    gvm_set_timeslice(fd, new_timeslice);
 
-        // Test setting interleave level
-        std::cout << "Setting interleave level to 2" << std::endl;
-        set_interleave(fd, 2);
+    // Verify the change
+    long long unsigned verify_timeslice = gvm_get_timeslice(fd);
+    std::cout << "Verified timeslice: " << verify_timeslice << " us"
+              << std::endl;
 
-        std::cout << "All tests completed successfully!" << std::endl;
-        return 0;
-    } else {
-        std::cerr << "Failed to find initialized UVM. Make sure NVIDIA drivers are loaded and UVM is initialized." << std::endl;
-        std::cerr << "You may need to run: sudo nvidia-modprobe -u -c=0" << std::endl;
-        return 1;
-    }
+    // Test setting interleave level
+    std::cout << "Setting interleave level to 2" << std::endl;
+    gvm_set_interleave(fd, 2);
+
+    std::cout << "All tests completed successfully!" << std::endl;
+    return 0;
+  } else {
+    std::cerr << "Failed to find initialized UVM. Make sure NVIDIA drivers are "
+                 "loaded and UVM is initialized."
+              << std::endl;
+    std::cerr << "You may need to run: sudo nvidia-modprobe -u -c=0"
+              << std::endl;
+    return 1;
+  }
 }

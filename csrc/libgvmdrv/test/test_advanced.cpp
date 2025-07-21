@@ -6,7 +6,7 @@
 int test_interleave_operations() {
     std::cout << "Testing interleave operations..." << std::endl;
 
-    int fd = find_initialized_uvm();
+    int fd = gvm_find_initialized_uvm();
     if (fd < 0) {
         std::cout << "✗ Skipping interleave test - no UVM available" << std::endl;
         return 0;
@@ -14,7 +14,7 @@ int test_interleave_operations() {
 
     // Test setting interleave level
     unsigned int test_level = 2;
-    set_interleave(fd, test_level);
+    gvm_set_interleave(fd, test_level);
     std::cout << "✓ Set interleave level to " << test_level << std::endl;
 
     return 0;
@@ -23,18 +23,18 @@ int test_interleave_operations() {
 int test_scheduling_operations() {
     std::cout << "Testing scheduling operations..." << std::endl;
 
-    int fd = find_initialized_uvm();
+    int fd = gvm_find_initialized_uvm();
     if (fd < 0) {
         std::cout << "✗ Skipping scheduling test - no UVM available" << std::endl;
         return 0;
     }
 
     // Test disabling scheduling
-    schedule(fd, false);
+    gvm_schedule(fd, false);
     std::cout << "✓ Disabled scheduling" << std::endl;
 
     // Test enabling scheduling
-    schedule(fd, true);
+    gvm_schedule(fd, true);
     std::cout << "✓ Enabled scheduling" << std::endl;
 
     return 0;
@@ -44,10 +44,10 @@ int test_error_handling() {
     std::cout << "Testing error handling..." << std::endl;
 
     // Test with invalid file descriptor
-    set_timeslice(-1, 1000);
+    gvm_set_timeslice(-1, 1000);
     std::cout << "✓ Error handling for invalid fd works" << std::endl;
 
-    get_timeslice(-1);
+    gvm_get_timeslice(-1);
     std::cout << "✓ Error handling for get_timeslice with invalid fd works" << std::endl;
 
     return 0;

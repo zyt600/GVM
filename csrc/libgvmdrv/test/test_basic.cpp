@@ -6,7 +6,7 @@
 int test_find_initialized_uvm() {
     std::cout << "Testing find_initialized_uvm()..." << std::endl;
 
-    int fd = find_initialized_uvm();
+    int fd = gvm_find_initialized_uvm();
     if (fd >= 0) {
         std::cout << "✓ Found initialized UVM with fd: " << fd << std::endl;
         return 0;
@@ -19,22 +19,22 @@ int test_find_initialized_uvm() {
 int test_timeslice_operations() {
     std::cout << "Testing timeslice operations..." << std::endl;
 
-    int fd = find_initialized_uvm();
+    int fd = gvm_find_initialized_uvm();
     if (fd < 0) {
         std::cout << "✗ Skipping timeslice test - no UVM available" << std::endl;
         return 0;
     }
 
     // Test getting current timeslice
-    long long unsigned current = get_timeslice(fd);
+    long long unsigned current = gvm_get_timeslice(fd);
     std::cout << "✓ Current timeslice: " << current << " us" << std::endl;
 
     // Test setting a new timeslice
     long long unsigned new_timeslice = current * 2;
-    set_timeslice(fd, new_timeslice);
+    gvm_set_timeslice(fd, new_timeslice);
 
     // Verify the change
-    long long unsigned verify = get_timeslice(fd);
+    long long unsigned verify = gvm_get_timeslice(fd);
     if (verify == new_timeslice) {
         std::cout << "✓ Timeslice successfully set to: " << verify << " us" << std::endl;
     } else {
@@ -44,7 +44,7 @@ int test_timeslice_operations() {
     }
 
     // Restore original timeslice
-    set_timeslice(fd, current);
+    gvm_set_timeslice(fd, current);
     std::cout << "✓ Restored original timeslice" << std::endl;
 
     return 0;
