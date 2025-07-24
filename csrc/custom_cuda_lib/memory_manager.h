@@ -11,7 +11,7 @@ public:
     static MemoryManager& getInstance();
 
     // Initialize the memory manager (call once at startup)
-    bool initialize();
+    bool init();
 
     // Check if allocation is allowed (handles PyTorch retry logic)
     bool canAllocate(size_t size);
@@ -38,8 +38,8 @@ private:
     MemoryManager& operator=(const MemoryManager&) = delete;
 
     // Internal initialization helpers
-    bool initializeMemoryLimit();
-    bool initializeUVMConnection();
+    bool initMemoryLimit();
+    bool initUVMConnection();
 
     // Memory tracking
     std::unordered_map<void*, size_t> g_cuda_mem_map;
@@ -49,7 +49,7 @@ private:
 
     // UVM/GVM integration
     int g_uvm_fd = -1;
-    bool g_gvm_initialized = false;
+    bool g_gvm_inited = false;
 
     // PyTorch retry logic
     std::atomic<bool> g_allow_next_overcommit{false};

@@ -30,8 +30,6 @@ static void *cuda_lib_handle = nullptr;
 static std::unordered_map<std::string, void *> g_function_cache;
 static bool g_symbols_loaded = false;
 
-
-
 // Generic function loader that works with any function type
 template <typename FuncType> FuncType GetCudaFunction(const std::string &name) {
   auto it = g_function_cache.find(name);
@@ -142,6 +140,18 @@ cudaError_t cudaMalloc(void **devPtr, size_t size) {
     std::cout << "[INTERCEPTOR] called cudaMalloc! Replacing with "
                  "cudaMallocManaged for size: "
               << size << std::endl;
+    void *tmp_ptr;
+    cudaError_t ret =
+        CUDA_ENTRY_CALL(MallocManaged, &tmp_ptr, 0, cudaMemAttachGlobal);
+    if (ret != cudaSuccess) {
+      std::cerr << "[INTERCEPTOR] init cudaMallocManaged: failed." << std::endl;
+      return ret;
+    }
+    ret = CUDA_ENTRY_CALL(Free, tmp_ptr);
+    if (ret != cudaSuccess) {
+      std::cerr << "[INTERCEPTOR] init cudaFree: failed." << std::endl;
+      return ret;
+    }
   }
 
   if (kCallOriginal) {
@@ -149,14 +159,14 @@ cudaError_t cudaMalloc(void **devPtr, size_t size) {
   }
 
   // Check if allocation is allowed (handles retry logic)
-  MemoryManager& memory_mgr = MemoryManager::getInstance();
-  memory_mgr.initialize();
-  if (!memory_mgr.canAllocate(size)) {
-    return cudaErrorMemoryAllocation;
-  }
+  MemoryManager &memory_mgr = MemoryManager::getInstance();
+  // if (!memory_mgr.canAllocate(size)) {
+  //   return cudaErrorMemoryAllocation;
+  // }
 
   // Perform the actual allocation using cudaMallocManaged
-  cudaError_t ret = CUDA_ENTRY_CALL(MallocManaged, devPtr, size, cudaMemAttachGlobal);
+  cudaError_t ret =
+      CUDA_ENTRY_CALL(MallocManaged, devPtr, size, cudaMemAttachGlobal);
   if (ret != cudaSuccess) {
     std::cerr << "[INTERCEPTOR] cudaMallocManaged: out of memory." << std::endl;
     return ret;
@@ -172,19 +182,20 @@ cudaError_t cudaMallocAsync(void **devPtr, size_t size, cudaStream_t stream) {
 
   static bool first_call = true;
   if (first_call) {
-    MemoryManager::getInstance().initialize();
     first_call = false;
     std::cout << "[INTERCEPTOR] called cudaMallocAsync." << std::endl;
   }
 
   // Check if allocation is allowed (handles retry logic)
-  MemoryManager& memory_mgr = MemoryManager::getInstance();
+  MemoryManager &memory_mgr = MemoryManager::getInstance();
+  memory_mgr.init();
   if (!memory_mgr.canAllocate(size)) {
     return cudaErrorMemoryAllocation;
   }
 
   // Perform the actual allocation using cudaMallocManaged
-  cudaError_t ret = CUDA_ENTRY_CALL(MallocManaged, devPtr, size, cudaMemAttachGlobal);
+  cudaError_t ret =
+      CUDA_ENTRY_CALL(MallocManaged, devPtr, size, cudaMemAttachGlobal);
   if (ret != cudaSuccess) {
     std::cerr << "[INTERCEPTOR] cudaMallocAsync: out of memory." << std::endl;
     return ret;
@@ -223,7 +234,8 @@ cudaError_t cudaMemGetInfo(size_t *free, size_t *total) {
   }
 
   // Let MemoryManager handle the logic and return appropriate values
-  MemoryManager::getInstance().getMemoryInfo(free, total, actual_free, actual_total);
+  MemoryManager::getInstance().getMemoryInfo(free, total, actual_free,
+                                             actual_total);
 
   return ret;
 }
