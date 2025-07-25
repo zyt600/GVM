@@ -1,5 +1,7 @@
 **/build/
 
+**/.cache/
+
 ## CUDA
 *.i
 *.ii
