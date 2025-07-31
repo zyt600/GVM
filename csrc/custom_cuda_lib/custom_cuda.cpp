@@ -2,12 +2,13 @@
 #define _GNU_SOURCE
 #endif
 
-#include <cuda_runtime.h>
 #include <iostream>
 
-#include "cuda_func_caller.h"
+#include <cuda_runtime.h>
+
+#include "cuda_func_caller.hpp"
 #include "cuda_utils.hpp"
-#include "memory_manager.h"
+#include "memory_manager.hpp"
 
 namespace {
 
@@ -49,7 +50,7 @@ cudaError_t cudaMalloc(void **devPtr, size_t size) {
 
   // Check if allocation is allowed (handles retry logic)
   gvm::MemoryManager &memory_mgr = gvm::MemoryManager::getInstance();
-  if (!memory_mgr.canAllocate(size)) {
+  if (!memory_mgr.canAlloc(size)) {
     return cudaErrorMemoryAllocation;
   }
 
@@ -62,7 +63,7 @@ cudaError_t cudaMalloc(void **devPtr, size_t size) {
   }
 
   // Record successful allocation
-  memory_mgr.recordAllocation(*devPtr, size);
+  memory_mgr.recordAlloc(*devPtr, size);
   return ret;
 }
 
@@ -78,7 +79,7 @@ cudaError_t cudaMallocAsync(void **devPtr, size_t size, cudaStream_t stream) {
   // Check if allocation is allowed (handles retry logic)
   gvm::MemoryManager &memory_mgr = gvm::MemoryManager::getInstance();
   memory_mgr.init();
-  if (!memory_mgr.canAllocate(size)) {
+  if (!memory_mgr.canAlloc(size)) {
     return cudaErrorMemoryAllocation;
   }
 
@@ -91,7 +92,7 @@ cudaError_t cudaMallocAsync(void **devPtr, size_t size, cudaStream_t stream) {
   }
 
   // Record successful allocation
-  memory_mgr.recordAllocation(*devPtr, size);
+  memory_mgr.recordAlloc(*devPtr, size);
   return ret;
 }
 
@@ -103,7 +104,7 @@ cudaError_t cudaFree(void *devPtr) {
   }
 
   // Record deallocation
-  gvm::MemoryManager::getInstance().recordDeallocation(devPtr);
+  gvm::MemoryManager::getInstance().recordDealloc(devPtr);
 
   return CUDA_ENTRY_CALL(Free, devPtr);
 }

@@ -16,13 +16,13 @@ public:
   bool init();
 
   // Check if allocation is allowed (handles PyTorch retry logic)
-  bool canAllocate(size_t size);
+  bool canAlloc(size_t size);
 
   // Record successful allocation
-  void recordAllocation(void *ptr, size_t size);
+  void recordAlloc(void *ptr, size_t size);
 
   // Record deallocation and return freed size
-  size_t recordDeallocation(void *ptr);
+  size_t recordDealloc(void *ptr);
 
   // Get memory info for cudaMemGetInfo
   void getMemoryInfo(size_t *free, size_t *total, size_t actual_free,

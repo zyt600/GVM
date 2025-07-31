@@ -1,6 +1,8 @@
-#include "cuda_func_caller.h"
 #include <dlfcn.h>
+
 #include <iostream>
+
+#include "cuda_func_caller.hpp"
 
 namespace gvm {
 

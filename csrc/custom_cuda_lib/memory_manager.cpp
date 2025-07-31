@@ -1,11 +1,15 @@
-#include "memory_manager.h"
-#include "../libgvmdrv/gvmdrv.h"
-#include "cuda_func_caller.h"
 #include <exception>
 #include <iostream>
 #include <string>
 
+#include "libgvmdrv/gvmdrv.h"
+
+#include "cuda_func_caller.hpp"
+#include "memory_manager.hpp"
+
 namespace gvm {
+static constexpr size_t GB = 1024LL * 1024LL * 1024LL;
+
 MemoryManager &MemoryManager::getInstance() {
   static MemoryManager instance;
   instance.init();
@@ -62,8 +66,7 @@ bool MemoryManager::initMemoryLimit() {
               << std::endl;
   }
 
-  g_memory_limit =
-      memory_limit_gb * 1024LL * 1024LL * 1024LL; // Convert GB to bytes
+  g_memory_limit = memory_limit_gb * GB; // Convert GB to bytes
   return true;
 }
 
@@ -122,13 +125,12 @@ bool MemoryManager::initUVMConnection() {
   // Set the memory limit via libgvmdrv
   gvm_set_gmemcg(g_uvm_fd, g_memory_limit);
   std::cout << "[MemoryManager] Successfully set GPU memory limit to "
-            << g_memory_limit / (1024LL * 1024LL * 1024LL) << "GB via libgvmdrv"
-            << std::endl;
+            << g_memory_limit / GB << "GB via libgvmdrv" << std::endl;
 
   return true;
 }
 
-bool MemoryManager::canAllocate(size_t size) {
+bool MemoryManager::canAlloc(size_t size) {
   if (!g_pytorch_retry_enabled) {
     return true;
   }
@@ -169,7 +171,7 @@ bool MemoryManager::canAllocate(size_t size) {
   return true;
 }
 
-void MemoryManager::recordAllocation(void *ptr, size_t size) {
+void MemoryManager::recordAlloc(void *ptr, size_t size) {
   g_cuda_mem_map[ptr] = size;
   g_cuda_mem_allocated += size;
 
@@ -180,7 +182,7 @@ void MemoryManager::recordAllocation(void *ptr, size_t size) {
             << effective_limit / 1024 / 1024 << "MB" << std::endl;
 }
 
-size_t MemoryManager::recordDeallocation(void *ptr) {
+size_t MemoryManager::recordDealloc(void *ptr) {
   auto it = g_cuda_mem_map.find(ptr);
   if (it != g_cuda_mem_map.end()) {
     size_t size = it->second;
