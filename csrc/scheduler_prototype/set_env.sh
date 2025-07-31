@@ -1,2 +1,2 @@
-ROOT=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd -P)
-export LD_PRELOAD="${ROOT}/scheduler-lib/libcuda-control.so:${ROOT}/scheduler-lib/libnvidia-ml.so.1:${ROOT}/scheduler-lib/libcuda.so.1"
+LIBPATH=$(cd "$(dirname "$0")" && pwd -P)
+export LD_PRELOAD="${LIBPATH}/scheduler-lib/libcuda-control.so:${LIBPATH}/scheduler-lib/libnvidia-ml.so.1:${LIBPATH}/scheduler-lib/libcuda.so.1"
