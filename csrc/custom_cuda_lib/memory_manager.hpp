@@ -60,7 +60,6 @@ private:
   bool g_pytorch_retry_enabled = false;
 
   // Constants
-  static constexpr size_t kDefaultMemoryLimitGB = 15;
   static constexpr const char *kMemoryLimitEnvVar = "GVM_MEM_LIMIT_GB";
   static constexpr const char *kPyTorchRetryEnvVar = "GVM_PYTORCH_RETRY";
 };

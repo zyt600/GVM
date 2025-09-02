@@ -45,25 +45,56 @@ bool MemoryManager::init() {
   return true;
 }
 
+static inline size_t get_memory_limit_from_gpu() {
+  size_t _free, _total;
+  CudaFuncCaller &cuda_caller = CudaFuncCaller::getInstance();
+  auto original_mem_get_info = cuda_caller.getMemGetInfo();
+  if (original_mem_get_info == nullptr) {
+    std::cerr
+        << "[MemoryManager] Could not get original cudaMemGetInfo function"
+        << std::endl;
+    return 0;
+  }
+  cudaError_t ret = original_mem_get_info(&_free, &_total);
+  if (ret != cudaSuccess) {
+    std::cerr << "[MemoryManager] Failed to get memory info from GPU: " << ret
+              << std::endl;
+    return 0;
+  }
+  return _total;
+}
+
 bool MemoryManager::initMemoryLimit() {
   // Read memory limit from environment variable
   const char *env_limit = std::getenv(kMemoryLimitEnvVar);
-  size_t memory_limit_gb = kDefaultMemoryLimitGB;
+
+  size_t memory_limit_gb = 0;
 
   if (env_limit != nullptr) {
     try {
       memory_limit_gb = std::stoull(env_limit);
-      std::cout << "[GVM] Using memory limit from environment: "
+      std::cout << "[MemoryManager] Using memory limit from environment: "
                 << memory_limit_gb << "GB" << std::endl;
     } catch (const std::exception &e) {
-      std::cerr << "[GVM] Invalid memory limit in environment variable, using "
-                   "default: "
-                << kDefaultMemoryLimitGB << "GB" << std::endl;
-      memory_limit_gb = kDefaultMemoryLimitGB;
+      memory_limit_gb = get_memory_limit_from_gpu() / GB;
+      if (memory_limit_gb == 0) {
+        std::cerr << "[MemoryManager] Failed to get memory limit from GPU"
+                  << std::endl;
+        return false;
+      }
+      std::cout << "[MemoryManager] Invalid memory limit in environment "
+                   "variable, using memory limit from GPU: "
+                << memory_limit_gb << "GB" << std::endl;
     }
   } else {
-    std::cout << "[GVM] Using default memory limit: " << memory_limit_gb << "GB"
-              << std::endl;
+    memory_limit_gb = get_memory_limit_from_gpu() / GB;
+    if (memory_limit_gb == 0) {
+      std::cerr << "[MemoryManager] Failed to get memory limit from GPU"
+                << std::endl;
+      return false;
+    }
+    std::cout << "[MemoryManager] Using memory limit from GPU: "
+              << memory_limit_gb << "GB" << std::endl;
   }
 
   g_memory_limit = memory_limit_gb * GB; // Convert GB to bytes
@@ -177,9 +208,9 @@ void MemoryManager::recordAlloc(void *ptr, size_t size) {
 
   int64_t effective_limit =
       g_memory_limit > 0 ? g_memory_limit : g_cuda_mem_total;
-  std::cout << "[MemoryManager] Total CUDA memory allocated: "
-            << g_cuda_mem_allocated / 1024 / 1024 << "MB / "
-            << effective_limit / 1024 / 1024 << "MB" << std::endl;
+  // std::cout << "[MemoryManager] Total CUDA memory allocated: "
+  //           << g_cuda_mem_allocated / 1024 / 1024 << "MB / "
+  //           << effective_limit / 1024 / 1024 << "MB" << std::endl;
 }
 
 size_t MemoryManager::recordDealloc(void *ptr) {
@@ -188,9 +219,9 @@ size_t MemoryManager::recordDealloc(void *ptr) {
     size_t size = it->second;
     g_cuda_mem_map.erase(it);
     g_cuda_mem_allocated -= size;
-    std::cout << "[MemoryManager] Freed " << size / 1024 / 1024 << "MB, "
-              << "remaining: " << g_cuda_mem_allocated / 1024 / 1024 << "MB"
-              << std::endl;
+    // std::cout << "[MemoryManager] Freed " << size / 1024 / 1024 << "MB, "
+    //           << "remaining: " << g_cuda_mem_allocated / 1024 / 1024 << "MB"
+    //           << std::endl;
     return size;
   }
   return 0;
