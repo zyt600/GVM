@@ -2,13 +2,12 @@
 #define _GNU_SOURCE
 #endif
 
-#include <iostream>
-
 #include <cuda_runtime.h>
 
 #include "cuda_func_caller.hpp"
 #include "cuda_utils.hpp"
 #include "memory_manager.hpp"
+#include "logging.hpp"
 
 namespace {
 
@@ -20,12 +19,12 @@ static constexpr bool kCallOriginal = false;
   ({                                                                           \
     auto &cuda_caller = gvm::CudaFuncCaller::getInstance();                    \
     if (!cuda_caller.isInitialized()) {                                        \
-      std::cerr << "[INTERCEPTOR] CUDA caller not initialized" << std::endl;   \
+      GVM_LOG_ERROR("CUDA caller not initialized");   \
       return cudaErrorUnknown;                                                 \
     }                                                                          \
     auto fn = cuda_caller.get##func_name();                                    \
     if (!fn) {                                                                 \
-      std::cerr << "[INTERCEPTOR] Failed to find " << #func_name << std::endl; \
+      GVM_LOG_ERROR("Failed to find " #func_name); \
       return cudaErrorUnknown;                                                 \
     }                                                                          \
     fn(__VA_ARGS__);                                                           \
@@ -41,7 +40,7 @@ cudaError_t cudaMalloc(void **devPtr, size_t size) {
   // Initialize memory manager on first call
   if (first_call) {
     first_call = false;
-    std::cout << "[INTERCEPTOR] called cudaMalloc." << std::endl;
+    GVM_LOG_DEBUG("cudaMalloc is called.");
   }
 
   if (kCallOriginal) {
@@ -58,7 +57,7 @@ cudaError_t cudaMalloc(void **devPtr, size_t size) {
   cudaError_t ret =
       CUDA_ENTRY_CALL(MallocManaged, devPtr, size, cudaMemAttachGlobal);
   if (ret != cudaSuccess) {
-    std::cerr << "[INTERCEPTOR] cudaMallocManaged: out of memory." << std::endl;
+    GVM_LOG_ERROR("cudaMallocManaged: out of memory.");
     return ret;
   }
 
@@ -73,7 +72,7 @@ cudaError_t cudaMallocAsync(void **devPtr, size_t size, cudaStream_t stream) {
   static bool first_call = true;
   if (first_call) {
     first_call = false;
-    std::cout << "[INTERCEPTOR] called cudaMallocAsync." << std::endl;
+    GVM_LOG_DEBUG("cudaMallocAsync is called.");
   }
 
   // Check if allocation is allowed (handles retry logic)
@@ -87,7 +86,7 @@ cudaError_t cudaMallocAsync(void **devPtr, size_t size, cudaStream_t stream) {
   cudaError_t ret =
       CUDA_ENTRY_CALL(MallocManaged, devPtr, size, cudaMemAttachGlobal);
   if (ret != cudaSuccess) {
-    std::cerr << "[INTERCEPTOR] cudaMallocAsync: out of memory." << std::endl;
+    GVM_LOG_ERROR("cudaMallocAsync: out of memory.");
     return ret;
   }
 
@@ -100,7 +99,7 @@ cudaError_t cudaFree(void *devPtr) {
   static bool first_call = true;
   if (first_call) {
     first_call = false;
-    std::cout << "[INTERCEPTOR] called cudaFree." << std::endl;
+    GVM_LOG_DEBUG("cudaFree is called.");
   }
 
   // Record deallocation
@@ -113,7 +112,7 @@ cudaError_t cudaMemGetInfo(size_t *free, size_t *total) {
   static bool first_call = true;
   if (first_call) {
     first_call = false;
-    std::cout << "[INTERCEPTOR] called cudaMemGetInfo." << std::endl;
+    GVM_LOG_DEBUG("cudaMemGetInfo is called.");
   }
 
   // Get actual GPU memory info first

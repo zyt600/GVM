@@ -1,10 +1,12 @@
+#include <cstdint>
+#include <cstdlib>
 #include <exception>
-#include <iostream>
 #include <string>
 
 #include "libgvmdrv/gvmdrv.h"
 
 #include "cuda_func_caller.hpp"
+#include "logging.hpp"
 #include "memory_manager.hpp"
 
 namespace gvm {
@@ -20,7 +22,7 @@ bool MemoryManager::init() {
   if (g_gvm_inited) {
     return true;
   }
-  std::cout << "[MemoryManager] Initializing memory manager" << std::endl;
+  GVM_LOG_INFO("Initializing memory manager");
 
   if (!initMemoryLimit()) {
     return false;
@@ -32,12 +34,11 @@ bool MemoryManager::init() {
     std::string retry_val(retry_env);
     g_pytorch_retry_enabled =
         (retry_val == "1" || retry_val == "true" || retry_val == "True");
-    std::cout << "[MemoryManager] PyTorch retry logic "
-              << (g_pytorch_retry_enabled ? "enabled" : "disabled")
-              << " via environment variable" << std::endl;
+    GVM_LOG_INFO_S << "PyTorch retry logic "
+                   << (g_pytorch_retry_enabled ? "enabled" : "disabled")
+                   << " via environment variable";
   } else {
-    std::cout << "[MemoryManager] PyTorch retry logic enabled by default"
-              << std::endl;
+    GVM_LOG_INFO("PyTorch retry logic enabled by default");
   }
 
   initUVMConnection();
@@ -50,15 +51,13 @@ static inline size_t get_memory_limit_from_gpu() {
   CudaFuncCaller &cuda_caller = CudaFuncCaller::getInstance();
   auto original_mem_get_info = cuda_caller.getMemGetInfo();
   if (original_mem_get_info == nullptr) {
-    std::cerr
-        << "[MemoryManager] Could not get original cudaMemGetInfo function"
-        << std::endl;
+    GVM_LOG_ERROR(
+        "[MemoryManager] Could not get original cudaMemGetInfo function");
     return 0;
   }
   cudaError_t ret = original_mem_get_info(&_free, &_total);
   if (ret != cudaSuccess) {
-    std::cerr << "[MemoryManager] Failed to get memory info from GPU: " << ret
-              << std::endl;
+    GVM_LOG_ERROR("[MemoryManager] Failed to get memory info from GPU");
     return 0;
   }
   return _total;
@@ -73,28 +72,25 @@ bool MemoryManager::initMemoryLimit() {
   if (env_limit != nullptr) {
     try {
       memory_limit_gb = std::stoull(env_limit);
-      std::cout << "[MemoryManager] Using memory limit from environment: "
-                << memory_limit_gb << "GB" << std::endl;
+      GVM_LOG_INFO_F("Using memory limit from environment: %zuGB",
+                     memory_limit_gb);
     } catch (const std::exception &e) {
       memory_limit_gb = get_memory_limit_from_gpu() / GB;
       if (memory_limit_gb == 0) {
-        std::cerr << "[MemoryManager] Failed to get memory limit from GPU"
-                  << std::endl;
+        GVM_LOG_ERROR("Failed to get memory limit from GPU");
         return false;
       }
-      std::cout << "[MemoryManager] Invalid memory limit in environment "
-                   "variable, using memory limit from GPU: "
-                << memory_limit_gb << "GB" << std::endl;
+      GVM_LOG_WARN_F("Invalid memory limit in environment "
+                     "variable, using memory limit from GPU: %zuGB",
+                     memory_limit_gb);
     }
   } else {
     memory_limit_gb = get_memory_limit_from_gpu() / GB;
     if (memory_limit_gb == 0) {
-      std::cerr << "[MemoryManager] Failed to get memory limit from GPU"
-                << std::endl;
+      GVM_LOG_ERROR("Failed to get memory limit from GPU");
       return false;
     }
-    std::cout << "[MemoryManager] Using memory limit from GPU: "
-              << memory_limit_gb << "GB" << std::endl;
+    GVM_LOG_INFO_F("Using memory limit from GPU: %zuGB", memory_limit_gb);
   }
 
   g_memory_limit = memory_limit_gb * GB; // Convert GB to bytes
@@ -102,18 +98,15 @@ bool MemoryManager::initMemoryLimit() {
 }
 
 bool MemoryManager::initUVMConnection() {
-  std::cout << "[MemoryManager] Initializing UVM connection..." << std::endl;
+  GVM_LOG_INFO("Initializing UVM connection...");
 
   // First, ensure UVM is initialized by triggering CUDA runtime initialization
-  std::cout
-      << "[MemoryManager] Triggering CUDA runtime initialization for UVM..."
-      << std::endl;
+  GVM_LOG_INFO("Triggering CUDA runtime initialization for UVM...");
 
   // Get the CUDA function caller instance
   CudaFuncCaller &cuda_caller = CudaFuncCaller::getInstance();
   if (!cuda_caller.initialize()) {
-    std::cerr << "[MemoryManager] Failed to initialize CUDA function caller"
-              << std::endl;
+    GVM_LOG_ERROR("Failed to initialize CUDA function caller");
     return false;
   }
 
@@ -121,9 +114,7 @@ bool MemoryManager::initUVMConnection() {
   // initialization
   auto original_mem_get_info = cuda_caller.getMemGetInfo();
   if (original_mem_get_info == nullptr) {
-    std::cerr
-        << "[MemoryManager] Could not get original cudaMemGetInfo function"
-        << std::endl;
+    GVM_LOG_ERROR("Could not get original cudaMemGetInfo function");
     return false;
   }
 
@@ -131,32 +122,27 @@ bool MemoryManager::initUVMConnection() {
   size_t free, total;
   cudaError_t ret = original_mem_get_info(&free, &total);
   if (ret != cudaSuccess) {
-    std::cerr << "[MemoryManager] CUDA runtime initialization failed: " << ret
-              << std::endl;
+    GVM_LOG_ERROR("CUDA runtime initialization failed");
     return false;
   }
 
-  std::cout << "[MemoryManager] CUDA runtime initialization successful"
-            << std::endl;
-  std::cout << "[MemoryManager] GPU memory: " << free / (1024 * 1024)
-            << "MB free / " << total / (1024 * 1024) << "MB total" << std::endl;
+  GVM_LOG_INFO("CUDA runtime initialization successful");
+  GVM_LOG_INFO_S << "GPU memory: " << free / (1024 * 1024) << "MB free / "
+                 << total / (1024 * 1024) << "MB total";
 
   // Now look for the CUDA-initialized UVM fd
   g_uvm_fd = gvm_find_initialized_uvm();
   if (g_uvm_fd < 0) {
-    std::cerr
-        << "[MemoryManager] No CUDA-initialized UVM found after initialization"
-        << std::endl;
+    GVM_LOG_ERROR("No CUDA-initialized UVM found after initialization");
     return false;
   }
 
-  std::cout << "[MemoryManager] Found UVM file descriptor: " << g_uvm_fd
-            << std::endl;
+  GVM_LOG_INFO_F("Found UVM file descriptor: %d", g_uvm_fd);
 
   // Set the memory limit via libgvmdrv
   gvm_set_gmemcg(g_uvm_fd, g_memory_limit);
-  std::cout << "[MemoryManager] Successfully set GPU memory limit to "
-            << g_memory_limit / GB << "GB via libgvmdrv" << std::endl;
+  GVM_LOG_INFO_S << "Successfully set GPU memory limit to "
+                 << g_memory_limit / GB << "GB via libgvmdrv";
 
   return true;
 }
@@ -180,20 +166,21 @@ bool MemoryManager::canAlloc(size_t size) {
       // overcommit
       g_allow_next_overcommit = false;
       g_failed_allocation_size = 0;
-      std::cout << "[MemoryManager] Allowing overcommit on retry. Requested: "
-                << size / 1024 / 1024 << "MB, would exceed limit by: "
-                << (g_cuda_mem_allocated + size - effective_limit) / 1024 / 1024
-                << "MB" << std::endl;
+      GVM_LOG_WARN_S << "Allowing overcommit on retry. Requested: "
+                     << size / 1024 / 1024 << "MB, would exceed limit by: "
+                     << (g_cuda_mem_allocated + size - effective_limit) / 1024 /
+                            1024
+                     << "MB";
       return true;
     } else {
       // First attempt or different size - return false to trigger PyTorch
       // garbage collection
       g_allow_next_overcommit = true;
       g_failed_allocation_size = size;
-      std::cerr << "[MemoryManager] Out of memory (triggering GC). Requested: "
-                << size / 1024 / 1024 << "MB, Available: "
-                << (effective_limit - g_cuda_mem_allocated) / 1024 / 1024
-                << "MB" << std::endl;
+      GVM_LOG_ERROR_S << "Out of memory (triggering GC). Requested: "
+                      << size / 1024 / 1024 << "MB, Available: "
+                      << (effective_limit - g_cuda_mem_allocated) / 1024 / 1024
+                      << "MB";
       return false;
     }
   }

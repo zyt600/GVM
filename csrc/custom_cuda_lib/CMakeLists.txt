@@ -12,19 +12,21 @@ set(SOURCES
     custom_cuda.cpp
     memory_manager.cpp
     cuda_func_caller.cpp
+    logging.cpp
 )
 
 set(HEADERS
     cuda_utils.hpp
-    memory_manager.h
-    cuda_func_caller.h
+    memory_manager.hpp
+    cuda_func_caller.hpp
+    logging.hpp
 )
 
 # Create shared library for LD_PRELOAD usage
 add_library(custom_cuda SHARED ${SOURCES})
 
-target_link_libraries(custom_cuda 
-    PRIVATE 
+target_link_libraries(custom_cuda
+    PRIVATE
     gvmdrv
     ${CMAKE_DL_LIBS}
 )
