@@ -28,8 +28,8 @@ LogLevel gvmdrv_get_log_level(void);
 #ifdef __cplusplus
 
 #define LOG_DEBUG(msg) gvmdrv_log(LOG_DEBUG, __FILE__, __LINE__, __func__, msg)
-#define LOG_INFO(msg)  gvmdrv_log(LOG_INFO, __FILE__, __LINE__, __func__, msg)
-#define LOG_WARN(msg)  gvmdrv_log(LOG_WARN, __FILE__, __LINE__, __func__, msg)
+#define LOG_INFO(msg) gvmdrv_log(LOG_INFO, __FILE__, __LINE__, __func__, msg)
+#define LOG_WARN(msg) gvmdrv_log(LOG_WARN, __FILE__, __LINE__, __func__, msg)
 #define LOG_ERROR(msg) gvmdrv_log(LOG_ERROR, __FILE__, __LINE__, __func__, msg)
 #define LOG_FATAL(msg) gvmdrv_log(LOG_FATAL, __FILE__, __LINE__, __func__, msg)
 

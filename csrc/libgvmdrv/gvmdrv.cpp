@@ -1,7 +1,7 @@
 #include <errno.h>
-#include <string.h>
 #include <filesystem>
 #include <iostream>
+#include <string.h>
 #include <string>
 #include <unistd.h>
 
@@ -232,7 +232,9 @@ void gvm_set_timeslice(int fd, long long unsigned timesliceUs) {
   gvmdrv::set_timeslice(fd, timesliceUs);
 }
 
-long long unsigned gvm_get_timeslice(int fd) { return gvmdrv::get_timeslice(fd); }
+long long unsigned gvm_get_timeslice(int fd) {
+  return gvmdrv::get_timeslice(fd);
+}
 
 void gvm_preempt(int fd) { gvmdrv::preempt(fd); }
 

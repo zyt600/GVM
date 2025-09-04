@@ -6,8 +6,8 @@
 
 #include "cuda_func_caller.hpp"
 #include "cuda_utils.hpp"
-#include "memory_manager.hpp"
 #include "logging.hpp"
+#include "memory_manager.hpp"
 
 namespace {
 
@@ -19,12 +19,12 @@ static constexpr bool kCallOriginal = false;
   ({                                                                           \
     auto &cuda_caller = gvm::CudaFuncCaller::getInstance();                    \
     if (!cuda_caller.isInitialized()) {                                        \
-      GVM_LOG_ERROR("CUDA caller not initialized");   \
+      GVM_LOG_ERROR("CUDA caller not initialized");                            \
       return cudaErrorUnknown;                                                 \
     }                                                                          \
     auto fn = cuda_caller.get##func_name();                                    \
     if (!fn) {                                                                 \
-      GVM_LOG_ERROR("Failed to find " #func_name); \
+      GVM_LOG_ERROR("Failed to find " #func_name);                             \
       return cudaErrorUnknown;                                                 \
     }                                                                          \
     fn(__VA_ARGS__);                                                           \
