@@ -8,4 +8,8 @@ SCHEDULER=${1:-none}
 # For diffusion, use low priority (0) for xsched
 source ${SCRIPT_DIR}/../utils/setup_scheduler.sh $SCHEDULER 0
 
-python diffusion.py --dataset_path datasets/vidprom.txt
+export CUDA_VISIBLE_DEVICES=0
+
+set -x
+llamafactory-cli train ${SCRIPT_DIR}/llama3_full_sft.yaml
+set +x
