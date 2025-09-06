@@ -1,5 +1,4 @@
 import argparse
-import csv
 import logging
 import os
 import signal
@@ -13,6 +12,7 @@ from diffusers import StableDiffusion3Pipeline
 
 LOG_LEVEL = "INFO"
 DISABLE_PROGRESS_BAR = True
+
 
 class ColoredFormatter(logging.Formatter):
     """Custom formatter with colored log levels."""
