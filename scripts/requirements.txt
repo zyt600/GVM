@@ -1,0 +1,7 @@
+torch==2.7.0
+transformers
+diffusers
+accelerate
+protobuf
+sentencepiece
+nvtx
