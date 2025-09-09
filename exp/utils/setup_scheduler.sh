@@ -48,7 +48,7 @@ setup_scheduler() {
         local GVM_PATH=$(cd ${SETUP_SCRIPT_DIR}/../../csrc/custom_cuda_lib && pwd -P)
         echo "Using GVM from ${GVM_PATH}"
 
-        export LD_PRELOAD=${GVM_PATH}/libcustom_cuda.so:$LD_PRELOAD # use GVM to intercept the libcuda.so calls
+        export LD_PRELOAD=${GVM_PATH}/libcustom_cuda.so:${LD_PRELOAD:-} # use GVM to intercept the libcuda.so calls
 
         echo "GVM configured"
 

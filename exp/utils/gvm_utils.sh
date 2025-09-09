@@ -7,10 +7,10 @@ die(){ __gvm_err "$@"; exit 1; }
 
 
 init_debugfs() {
-    echo "Initializing GVM debugfs..."
+    # echo "Initializing GVM debugfs..."
     sudo chmod 777 /sys/kernel/debug/
     sudo chmod -R 777 /sys/kernel/debug/nvidia-uvm/
-    echo "Done"
+    # echo "Done"
 }
 
 find_pids() {
@@ -33,17 +33,14 @@ set_compute_priority() {
     local pid=$1
     local priority=$2
 
-    if [ ! -d "/sys/kernel/debug/nvidia-uvm/processes/$pid" ]; then
-        die "Directory /sys/kernel/debug/nvidia-uvm/processes/$pid does not exist"
-    fi
-
+    init_debugfs
     for dir in /sys/kernel/debug/nvidia-uvm/processes/$pid/*; do
         if [ -d "$dir" ]; then
-            if [ -w "$dir/compute.priority" ]; then
+            if [ -f "$dir/compute.priority" ]; then
                 echo "Setting compute priority for PID $pid, dir $dir"
                 echo $priority | sudo tee "$dir/compute.priority" > /dev/null
             else
-                die "Permission denied to set compute priority for PID $pid, dir $dir"
+                die "File $dir/compute.priority does not exist"
             fi
         fi
     done
@@ -54,8 +51,9 @@ set_memory_limit_in_bytes() {
     local limit=$2
     local gpuid=${3:-0}
 
-    if [ ! -w "/sys/kernel/debug/nvidia-uvm/processes/$pid/$gpuid/memory.limit" ]; then
-        die "Permission denied to set memory limit for PID $pid, gpuid $gpuid"
+    init_debugfs
+    if [ ! -f "/sys/kernel/debug/nvidia-uvm/processes/$pid/$gpuid/memory.limit" ]; then
+        die "File /sys/kernel/debug/nvidia-uvm/processes/$pid/$gpuid/memory.limit does not exist"
     fi
 
     echo $limit | sudo tee "/sys/kernel/debug/nvidia-uvm/processes/$pid/$gpuid/memory.limit" > /dev/null
@@ -83,4 +81,19 @@ find_vllm_pids() {
 
 find_diffusion_pids() {
     find_pids "python.*diffusion\.py"
+}
+
+
+kill_vllm() {
+    local vllm_pids=$(find_vllm_pids)
+    for pid in $vllm_pids; do
+        kill -9 $pid
+    done
+}
+
+kill_diffusion() {
+    local diffusion_pids=$(find_diffusion_pids)
+    for pid in $diffusion_pids; do
+        kill -9 $pid
+    done
 }
