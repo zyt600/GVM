@@ -3,3 +3,5 @@ diffusion_outputs/
 BurstGPT*.csv
 ShareGPT*.json
 VidProM*.csv
+
+diffusion_tput_wrt_mem/

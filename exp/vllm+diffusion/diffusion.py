@@ -252,7 +252,7 @@ class DiffusionInferenceServer:
         with open(log_path, "w", encoding="utf-8") as f:
             # Write simple text format: request_id inference_duration
             for result in self.results:
-                f.write(f"{result.request_id} {result.inference_duration:.3f}\n")
+                f.write(f"{result.inference_duration:.3f}\n")
 
         logger.info(f"Timing log saved to {log_path}")
 
