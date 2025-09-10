@@ -11,6 +11,9 @@ source ${SCRIPT_DIR}/../utils/setup_scheduler.sh $SCHEDULER 0
 
 export CUDA_VISIBLE_DEVICES=$GPUS
 
+# Disable transformers version check for llama-factory
+export DISABLE_VERSION_CHECK=1
+
 # Clean up previous runs
 rm -rf ${SCRIPT_DIR}/llama_factory_saves
 set -x

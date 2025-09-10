@@ -163,7 +163,7 @@ bool MemoryManager::canAlloc(size_t size) {
       // overcommit
       g_allow_next_overcommit = false;
       g_failed_allocation_size = 0;
-      GVM_LOG_WARN_S << "Allowing overcommit on retry. Requested: "
+      GVM_LOG_INFO_S << "Allowing overcommit on retry. Requested: "
                      << size / 1024 / 1024 << "MB, would exceed limit by: "
                      << (g_cuda_mem_allocated + size - effective_limit) / 1024 /
                             1024
@@ -174,7 +174,7 @@ bool MemoryManager::canAlloc(size_t size) {
       // garbage collection
       g_allow_next_overcommit = true;
       g_failed_allocation_size = size;
-      GVM_LOG_ERROR_S << "Out of memory (triggering GC). Requested: "
+      GVM_LOG_INFO_S << "Out of memory (triggering GC). Requested: "
                       << size / 1024 / 1024 << "MB, Available: "
                       << (effective_limit - g_cuda_mem_allocated) / 1024 / 1024
                       << "MB";
