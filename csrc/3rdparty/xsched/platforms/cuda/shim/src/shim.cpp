@@ -322,8 +322,14 @@ CUresult XStreamDestroy_v2(CUstream stream)
 
 CUresult XMemAlloc_v2(CUdeviceptr *dptr, size_t bytesize)
 {
+    static bool enabled = (std::getenv("XSCHED_ENABLE_MANAGED") != nullptr);
     XDEBG("XMemAlloc_v2(dptr: %p, bytesize: %zu)", dptr, bytesize);
-    return Driver::MemAllocManaged(dptr, bytesize, CU_MEM_ATTACH_GLOBAL);
+    if (enabled) {
+        // If XSCHED_ENABLE_MANAGED is set, we want to use MemAllocManaged instead of MemAlloc to enable swapping.
+        // This modification is not part of the original XSched codebase and is GVM specific.
+        return Driver::MemAllocManaged(dptr, bytesize, CU_MEM_ATTACH_GLOBAL);
+    }
+    return Driver::MemAlloc_v2(dptr, bytesize);
 }
 
 } // namespace xsched::cuda
