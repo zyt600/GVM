@@ -3,5 +3,6 @@ diffusion_outputs/
 BurstGPT*.csv
 ShareGPT*.json
 VidProM*.csv
+plots/motiv_mem_perf_study.pdf
 
 diffusion_tput_wrt_mem/

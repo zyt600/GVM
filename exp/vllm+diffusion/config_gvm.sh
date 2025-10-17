@@ -81,7 +81,31 @@ set_diffusion_priority() {
     fi
 }
 
+set_diffusion_mem_limit() {
+    local limit_gb=$1
+    echo "Setting memory limit to ${limit_gb}GB for Diffusion processes using GPU..."
+
+    diffusion_pids=$(find_diffusion_pids)
+
+    if [ -z "$diffusion_pids" ]; then
+        echo "No Diffusion processes (python diffusion.py) found using GPU"
+    else
+        echo "Found Diffusion processes with PIDs: $diffusion_pids"
+
+        # Process each diffusion PID
+        for pid in $diffusion_pids; do
+            set_memory_limit_in_gb $pid $limit_gb
+            if [ $? -eq 0 ]; then
+                echo "Successfully set memory limit to ${limit_gb}GB for Diffusion PID $pid"
+            else
+                echo "Failed to set memory limit to ${limit_gb}GB for Diffusion PID $pid"
+            fi
+        done
+    fi
+}
+
 init_debugfs
 set_vllm_priority
 echo ""
 set_diffusion_priority
+set_diffusion_mem_limit "${GVM_MEM_LIMIT_GB}"
