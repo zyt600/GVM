@@ -13,99 +13,51 @@ DIFFUSION_PRIORITY=${2:-8}
 VLLM_MEM_GB=${3:-0}
 DIFFUSION_MEM_GB=${4:-0}
 
-# Set vLLM priority
-set_vllm_priority() {
-    echo "Looking for vLLM processes using GPU..."
-
-    # Find vLLM processes that are using GPU
-    # We'll look for processes with "vllm" in the name that are using GPU memory
-    vllm_pids=$(find_vllm_pids)
-
-    if [ -z "$vllm_pids" ]; then
-        echo "No vLLM processes found using GPU"
+# Generic function to apply an action (priority or memory limit) to processes
+set_process_config() {
+    local finder_func=$1
+    local process_type=$2
+    local action=$3
+    local value=$4
+    
+    # Setup action-specific variables
+    local action_desc action_func
+    if [ "$action" = "priority" ]; then
+        action_desc="compute priority"
+        action_func="set_compute_priority"
+        echo "Looking for $process_type processes using GPU..."
     else
-        echo "Found vLLM processes with PIDs: $vllm_pids"
-
-        # Process each PID
-        for pid in $vllm_pids; do
-            set_compute_priority $pid $VLLM_PRIORITY
-            if [ $? -eq 0 ]; then
-                echo "Successfully set compute priority to $VLLM_PRIORITY for vLLM PID $pid"
-            else
-                echo "Failed to set compute priority to $VLLM_PRIORITY for vLLM PID $pid"
-            fi
-            if [ $VLLM_MEM_GB -gt 0 ]; then
-                set_memory_limit_in_gb $pid $VLLM_MEM_GB
+        action_desc="memory limit"
+        action_func="set_memory_limit_in_gb"
+        echo "Setting memory limit to ${value}GB for $process_type processes using GPU..."
+    fi
+    
+    local pids=$($finder_func)
+    
+    if [ -z "$pids" ]; then
+        echo "No $process_type processes found using GPU"
+    else
+        echo "Found $process_type processes with PIDs: $pids"
+        
+        for pid in $pids; do
+            # Skip memory limit if value is 0
+            if [ "$action" = "priority" ] || [ $value -gt 0 ]; then
+                $action_func $pid $value
                 if [ $? -eq 0 ]; then
-                    echo "Successfully set memory limit to $VLLM_MEM_GB for vLLM PID $pid"
+                    echo "Successfully set $action_desc to $value for $process_type PID $pid"
                 else
-                    echo "Failed to set memory limit to $VLLM_MEM_GB for vLLM PID $pid"
+                    echo "Failed to set $action_desc to $value for $process_type PID $pid"
                 fi
             fi
         done
-
-        echo "Done processing all vLLM processes"
-    fi
-}
-
-set_diffusion_priority() {
-    # Look for diffusion processes (python diffusion.py)
-    echo "Looking for Diffusion processes using GPU..."
-
-    # Find processes that contain "diffusion.py" in their command line
-    diffusion_pids=$(find_diffusion_pids)
-
-    if [ -z "$diffusion_pids" ]; then
-        echo "No Diffusion processes (python diffusion.py) found using GPU"
-    else
-        echo "Found Diffusion processes with PIDs: $diffusion_pids"
-
-        # Process each diffusion PID
-        for pid in $diffusion_pids; do
-            set_compute_priority $pid $DIFFUSION_PRIORITY
-            if [ $? -eq 0 ]; then
-                echo "Successfully set compute priority to $DIFFUSION_PRIORITY for Diffusion PID $pid"
-            else
-                echo "Failed to set compute priority to $DIFFUSION_PRIORITY for Diffusion PID $pid"
-            fi
-
-            if [ $DIFFUSION_MEM_GB -gt 0 ]; then
-                set_memory_limit_in_gb $pid $DIFFUSION_MEM_GB
-                if [ $? -eq 0 ]; then
-                    echo "Successfully set memory limit to $DIFFUSION_MEM_GB for Diffusion PID $pid"
-                else
-                    echo "Failed to set memory limit to $DIFFUSION_MEM_GB for Diffusion PID $pid"
-                fi
-            fi
-        done
-    fi
-}
-
-set_diffusion_mem_limit() {
-    local limit_gb=$1
-    echo "Setting memory limit to ${limit_gb}GB for Diffusion processes using GPU..."
-
-    diffusion_pids=$(find_diffusion_pids)
-
-    if [ -z "$diffusion_pids" ]; then
-        echo "No Diffusion processes (python diffusion.py) found using GPU"
-    else
-        echo "Found Diffusion processes with PIDs: $diffusion_pids"
-
-        # Process each diffusion PID
-        for pid in $diffusion_pids; do
-            set_memory_limit_in_gb $pid $limit_gb
-            if [ $? -eq 0 ]; then
-                echo "Successfully set memory limit to ${limit_gb}GB for Diffusion PID $pid"
-            else
-                echo "Failed to set memory limit to ${limit_gb}GB for Diffusion PID $pid"
-            fi
-        done
+        
+        [ "$action" = "priority" ] && echo "Done processing all $process_type processes"
     fi
 }
 
 init_debugfs
-set_vllm_priority
+set_process_config find_vllm_pids "vLLM" priority "${VLLM_PRIORITY}"
+set_process_config find_vllm_pids "vLLM" memory "${VLLM_MEM_GB}"
 echo ""
-set_diffusion_priority
-set_diffusion_mem_limit "${GVM_MEM_LIMIT_GB}"
+set_process_config find_diffusion_pids "Diffusion" priority "${DIFFUSION_PRIORITY}"
+set_process_config find_diffusion_pids "Diffusion" memory "${DIFFUSION_MEM_GB}"
