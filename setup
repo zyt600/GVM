@@ -30,6 +30,8 @@ case "$1" in
 		pip3 install protobuf
 		pip3 install sentencepiece
 		pip3 install accelerate
+		wget https://github.com/ovg-project/GVM/releases/download/v0.0.0-diffusion/diffusion.py
+		wget https://github.com/ovg-project/GVM/releases/download/v0.0.0-diffusion/vidprom.txt
 		popd
 		deactivate
 		;;
@@ -42,6 +44,7 @@ case "$1" in
 		pushd LLaMA-Factory
 		pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129
 		pip3 install llama-factory
+		wget https://github.com/ovg-project/GVM/releases/download/v0.0.0-llama-factory/llama3_lora_sft.yaml
 		popd
 		deactivate
 		;;
