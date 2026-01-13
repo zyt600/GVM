@@ -1,8 +1,0 @@
-# Build artifacts
-*.o
-*.a
-*.so
-*.so.*
-
-# Build directories
-build/
