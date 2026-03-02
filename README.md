@@ -5,7 +5,7 @@ For details, please check [here](https://github.com/ovg-project/GVM/blob/main/as
 
 | API                 | Description                                                                                |
 |:--------------------|:-------------------------------------------------------------------------------------------|
-| memory.limit        | Check or set the maximum amount of memory that the application can allocate on GPU         |
+| memory.limit.high   | Check or set the maximum amount of memory that the application can allocate on GPU         |
 | memory.current      | Get the current memory usage of the application on GPU                                     |
 | memory.swap.current | Get the current amount of memory swapped to host of the application on GPU                 |
 | compute.priority    | Get or set the compute priority of the application on GPU (0-15. lower is higher priority) |
@@ -47,18 +47,18 @@ export pid=<pid of diffuser showed on nvidia-smi>
 
 Check kernel submission stats:
 ```
-cat /sys/kernel/debug/nvidia-uvm/processes/$pid/0/gcgroup.stat
+sudo cat /sys/kernel/debug/nvidia-uvm/processes/$pid/0/gcgroup.stat
 ```
 
 Check memory stats:
 ```
-cat /sys/kernel/debug/nvidia-uvm/processes/$pid/0/memory.current
-cat /sys/kernel/debug/nvidia-uvm/processes/$pid/0/memory.swap.current
+sudo cat /sys/kernel/debug/nvidia-uvm/processes/$pid/0/memory.current
+sudo cat /sys/kernel/debug/nvidia-uvm/processes/$pid/0/memory.swap.current
 ```
 
 Limit memory usage:
 ```
-echo <memory limit in bytes> | sudo tee /sys/kernel/debug/nvidia-uvm/processes/$pid/0/memory.limit
+echo <memory limit in bytes> | sudo tee /sys/kernel/debug/nvidia-uvm/processes/$pid/0/memory.limit.high
 ```
 
 ## vllm + diffuser
@@ -84,7 +84,7 @@ export vllmpid=<pid of vllm showed on nvidia-smi>
 
 Check compute priority of vllm:
 ```
-cat /sys/kernel/debug/nvidia-uvm/processes/$vllmpid/0/compute.priority
+sudo cat /sys/kernel/debug/nvidia-uvm/processes/$vllmpid/0/compute.priority
 ```
 
 Set compute priority of vllm to 2 to use a larger timeslice:
@@ -94,7 +94,7 @@ echo 2 | sudo tee /sys/kernel/debug/nvidia-uvm/processes/$vllmpid/0/compute.prio
 
 Limit memory usage of diffuser to ~6GB to make enough room for vllm to run:
 ```
-echo 6000000000 | sudo tee /sys/kernel/debug/nvidia-uvm/processes/$diffuserpid/0/memory.limit
+echo 6000000000 | sudo tee /sys/kernel/debug/nvidia-uvm/processes/$diffuserpid/0/memory.limit.high
 ```
 
 Generate workloads for vllm:
